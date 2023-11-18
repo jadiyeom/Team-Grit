@@ -21,7 +21,7 @@ class QuickSortAnimation(Scene):
             text.move_to(square)
 
         title = Text("Quick Sort", color=WHITE, font_size=30)
-        title.move_to([0, 2, 0])
+        title.move_to([0, 3, 0])
 
         self.play(Write(title))
         self.play(*[Create(group) for group in square_text_groups])
@@ -39,14 +39,37 @@ class QuickSortAnimation(Scene):
     def pivotIndex(self, nums_list, high, low ,square_text_groups, block_size):
         pivotIndex = high
         selectionIndex = low
+
+        PivotTxt = Text("Pivot", color=WHITE, font_size=9*block_size)
+        PivotTxtPos = [-7+block_size*(pivotIndex+1/2), block_size*0.57, 0]
+        PivotTxt.move_to(PivotTxtPos)
+        self.play(Write(PivotTxt))
+
         self.play(square_text_groups[pivotIndex][0].animate.set_color(YELLOW),
                       run_time=0.5)
+
+        SelectionTxt = Text("Selection", color=WHITE, font_size=9*block_size)
+        SelectionTxtPos = [-7+block_size*(selectionIndex+1/2), block_size*0.48, 0]
+        SelectionTxt.move_to(SelectionTxtPos)
+        self.play(Write(SelectionTxt))
+
+        CurrentTxt = Text("Current", color=WHITE, font_size=9*block_size)
+
         for i in range( low, high):
+            CurrentTxtPos = [-7+block_size*(i+1/2), block_size*0.5*(-1), 0]
+            if i == low:
+               CurrentTxt.move_to(CurrentTxtPos)
+               self.play(Write(CurrentTxt))
+            else :
+               self.play( CurrentTxt.animate.move_to(CurrentTxtPos) )
             self.play(square_text_groups[i][0].animate.set_color(RED),
                       square_text_groups[selectionIndex][0].animate.set_color(RED),
                       run_time=0.5)
             self.wait(0.5)
             if nums_list[i] < nums_list[pivotIndex]:
+               self.play(Indicate(square_text_groups[i][1],scale_factor=2))
+               self.play(Indicate(square_text_groups[pivotIndex][1],scale_factor=2))
+
                nums_list[i], nums_list[selectionIndex] = nums_list[selectionIndex], nums_list[i]
                square_text_groups[i], square_text_groups[selectionIndex] = square_text_groups[selectionIndex], square_text_groups[i]
                self.play(
@@ -59,6 +82,9 @@ class QuickSortAnimation(Scene):
                self.play(square_text_groups[selectionIndex][0].animate.set_color(BLUE),
                          run_time=0.5)
                selectionIndex = selectionIndex + 1
+               newPos = [-7+block_size*(selectionIndex+1/2), block_size*0.48, 0]
+               self.play(SelectionTxt.animate.move_to(newPos),
+                         run_time=0.5)
 
             self.play(square_text_groups[i][0].animate.set_color(BLUE),
                       run_time=0.5)
@@ -66,8 +92,14 @@ class QuickSortAnimation(Scene):
                 new_position = [-7+block_size*(k+1/2), 0, 0]
                 square_text_groups[k].move_to(new_position)
 
+        CurrentTxtPos = [-7+block_size*(high+1/2), block_size*0.5*(-1), 0]
+        self.play( CurrentTxt.animate.move_to(CurrentTxtPos) )
+
         self.play(square_text_groups[selectionIndex][0].animate.set_color(RED),
                          run_time=0.5)
+        self.play(Indicate(square_text_groups[selectionIndex][1],scale_factor=2))
+        self.play(Indicate(square_text_groups[pivotIndex][1],scale_factor=2))
+
         nums_list[pivotIndex], nums_list[selectionIndex] = nums_list[selectionIndex], nums_list[pivotIndex]
         square_text_groups[pivotIndex], square_text_groups[selectionIndex] = square_text_groups[selectionIndex], square_text_groups[pivotIndex]
         self.play(
@@ -83,6 +115,7 @@ class QuickSortAnimation(Scene):
         self.play(square_text_groups[pivotIndex][0].animate.set_color(BLUE),
                   square_text_groups[selectionIndex][0].animate.set_color(GREEN),
                       run_time=0.5)
+        self.play(FadeOut(SelectionTxt),FadeOut(PivotTxt),FadeOut(CurrentTxt))
         return selectionIndex
 
     def QuickSort(self, nums_list, high, low ,square_text_groups, block_size):
@@ -90,3 +123,7 @@ class QuickSortAnimation(Scene):
              index = self.pivotIndex( nums_list, high, low ,square_text_groups, block_size)
              self.QuickSort(nums_list, index-1, low ,square_text_groups, block_size)
              self.QuickSort(nums_list, high, index+1 ,square_text_groups, block_size)
+             return
+        if low >= 0 and low < len(nums_list):
+             self.play(square_text_groups[low][0].animate.set_color(GREEN),
+                      run_time=0.5)
