@@ -25,6 +25,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/team-grit-render"
           cp tests/render_smoke.py "$RUNNER_TEMP/team-grit-render/scene.py"
+          chmod 777 "$RUNNER_TEMP/team-grit-render"
           docker run --rm --network none --memory 2g --cpus 2 --pids-limit 128 \
             --read-only --tmpfs /tmp:rw,nosuid,size=512m -e HOME=/tmp \
             -v "$RUNNER_TEMP/team-grit-render:/work:rw" -w /work \
