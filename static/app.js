@@ -7,3 +7,32 @@ async function generate(){const prompt=$("prompt").value.trim();if(prompt.length
 async function render(){if(!current)return;const button=$("render");button.disabled=true;button.textContent="Rendering…";$("progress").hidden=false;$("progress-text").textContent="Rendering in an isolated Docker container…";let amount=12;$("bar").style.width=amount+"%";const tick=setInterval(()=>{amount=Math.min(88,amount+4);$("bar").style.width=amount+"%"},1200);try{const r=await fetch("/api/v1/projects/"+current.id+"/renders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({quality:"preview"})});const data=await r.json();if(!r.ok)throw new Error(typeof data.detail==="string"?data.detail:(data.detail&&data.detail.message)||"Render failed");$("video").src=data.video_url;$("video").hidden=false;$("video").load();$("placeholder").hidden=true;$("project-meta").textContent="Rendered in "+data.duration_seconds+"s · preview quality";notify("Your animation is ready to preview")}catch(e){notify(e.message||"Render failed")}finally{clearInterval(tick);$("progress").hidden=true;button.disabled=false;button.textContent="Render again ↗"}}
 async function refreshHistory(){try{const r=await fetch("/api/v1/projects");if(!r.ok)return;const data=await r.json();$("count").textContent=data.projects.length;const list=$("history-list");list.replaceChildren();if(!data.projects.length)list.append(safeText("p","empty","Your projects will appear here."));data.projects.forEach(item=>{const card=safeText("article","history-card","");card.tabIndex=0;card.append(safeText("b","",item.title||"Untitled story"),safeText("p","",item.prompt),safeText("small","",new Date((item.created_at||0)*1000).toLocaleDateString()));const open=async()=>{try{const response=await fetch("/api/v1/projects/"+item.id);const d=await response.json();if(response.ok){showProject(d.project);$("history").hidden=true}}catch{notify("Could not open project")}};card.addEventListener("click",open);card.addEventListener("keydown",e=>{if(e.key==="Enter")open()});list.append(card)})}catch{}}
 $("prompt").addEventListener("input",()=>$("chars").textContent=$("prompt").value.length+" / 4000");document.querySelectorAll("[data-prompt]").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chars").textContent=$("prompt").value.length+" / 4000";$("prompt").focus()}));$("generate").addEventListener("click",generate);$("render").addEventListener("click",render);$("copy-code").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(current.code);notify("Manim code copied")}catch{notify("Clipboard unavailable")}});$("copy-script").addEventListener("click",async()=>{const text=(current.storyboard.scenes||[]).map(s=>s.title+"\n"+(s.narration||"")).join("\n\n");try{await navigator.clipboard.writeText(text);notify("Narration script copied")}catch{notify("Clipboard unavailable")}});$("history-toggle").addEventListener("click",()=>{$("history").hidden=!$("history").hidden;$("history").scrollIntoView({behavior:"smooth",block:"nearest"})});$("close-history").addEventListener("click",()=>$("history").hidden=true);fetch("/api/v1/health").then(r=>{if(!r.ok)throw new Error();$("status").textContent="API connected"}).catch(()=>$("status").textContent="API unavailable");refreshHistory();
+\n// Populate model suggestions from the API while preserving the free-form model ID field.
+async function loadModelSuggestions(){
+  try{
+    const response=await fetch("/api/v1/providers");
+    if(!response.ok)return;
+    const data=await response.json();
+    const catalog=data.models||{};
+    const refresh=()=>{
+      const provider=$("provider").value||"openai";
+      const options=catalog[provider]||[];
+      const list=$("model-options");
+      if(!list)return;
+      list.replaceChildren();
+      options.forEach(model=>{
+        const option=document.createElement("option");
+        option.value=model.id;
+        option.label=model.label;
+        list.append(option);
+      });
+      const hint=$("model-hint");
+      if(hint)hint.textContent=options.length
+        ? "Suggestions for "+provider+". You can still type any model ID supported by your provider."
+        : "Enter the model ID supported by your custom or local endpoint.";
+    };
+    $("provider").addEventListener("change",refresh);
+    refresh();
+  }catch{}
+}
+loadModelSuggestions();
