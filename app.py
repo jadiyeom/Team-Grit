@@ -37,15 +37,15 @@ class RenderRequest(BaseModel):
 def resolve_provider(req):
     provider = "local" if req.mode == "local" else "openai-compatible" if req.mode == "custom" else req.provider or os.getenv("TEAMGRIT_DEFAULT_PROVIDER","openai")
     model = req.model
-    if not model and req.mode == "fast": model = os.getenv("TEAMGRIT_FAST_MODEL","gpt-4o-mini")
-    if not model and req.mode == "quality": model = os.getenv("TEAMGRIT_QUALITY_MODEL","gpt-4o")
+    if not model and req.mode == "fast": model = os.getenv("TEAMGRIT_FAST_MODEL","gpt-6-luna")
+    if not model and req.mode == "quality": model = os.getenv("TEAMGRIT_QUALITY_MODEL","gpt-6.1-sol")
     key, base = req.api_key, req.base_url
     if provider == "openai":
-        model, key = model or os.getenv("OPENAI_MODEL","gpt-4o-mini"), key or os.getenv("OPENAI_API_KEY")
+        model, key = model or os.getenv("OPENAI_MODEL","gpt-6-luna"), key or os.getenv("OPENAI_API_KEY")
     elif provider == "anthropic":
-        model, key = model or os.getenv("ANTHROPIC_MODEL","anthropic/claude-3-5-sonnet-latest"), key or os.getenv("ANTHROPIC_API_KEY")
+        model, key = model or os.getenv("ANTHROPIC_MODEL","anthropic/claude-sonnet-5"), key or os.getenv("ANTHROPIC_API_KEY")
     elif provider == "gemini":
-        model, key = model or os.getenv("GEMINI_MODEL","gemini/gemini-2.5-flash"), key or os.getenv("GEMINI_API_KEY")
+        model, key = model or os.getenv("GEMINI_MODEL","gemini/gemini-3.8-flash"), key or os.getenv("GEMINI_API_KEY")
     elif provider == "openai-compatible":
         model, base, key = model or os.getenv("CUSTOM_MODEL","openai-compatible/model"), base or os.getenv("OPENAI_BASE_URL"), key or os.getenv("OPENAI_COMPATIBLE_API_KEY")
     elif provider == "local":
@@ -94,9 +94,35 @@ def health(): return {"status":"ok","service":"team-grit-studio","version":app.v
 
 @app.get("/api/v1/providers")
 def provider_options():
+    # Suggestions are maintained from the providers' public model catalogs; account access varies.
+    models = {
+        "openai": [
+            {"id":"gpt-6-astra","label":"GPT-6 Astra · highest capability"},
+            {"id":"gpt-6.1-sol","label":"GPT-6.1 Sol · balanced"},
+            {"id":"gpt-6-luna","label":"GPT-6 Luna · cost-efficient"},
+            {"id":"gpt-5.6-sol","label":"GPT-5.6 Sol"},
+            {"id":"gpt-5.6-terra","label":"GPT-5.6 Terra"},
+            {"id":"gpt-5.6-luna","label":"GPT-5.6 Luna"},
+        ],
+        "anthropic": [
+            {"id":"anthropic/claude-fable-5","label":"Claude Fable 5 · long-running agents"},
+            {"id":"anthropic/claude-opus-5","label":"Claude Opus 5 · complex work"},
+            {"id":"anthropic/claude-opus-4-8","label":"Claude Opus 4.8"},
+            {"id":"anthropic/claude-sonnet-5","label":"Claude Sonnet 5 · balanced"},
+            {"id":"anthropic/claude-haiku-4-5","label":"Claude Haiku 4.5 · fast"},
+        ],
+        "gemini": [
+            {"id":"gemini/gemini-3.8-flash","label":"Gemini 3.8 Flash · fast"},
+            {"id":"gemini/gemini-3.1-pro-preview","label":"Gemini 3.1 Pro Preview · reasoning"},
+            {"id":"gemini/gemini-3.7-flash","label":"Gemini 3.7 Flash"},
+        ],
+        "openai-compatible": [{"id":"openai-compatible/model","label":"Custom compatible model ID"}],
+        "local": [{"id":"openai/local-model","label":"Local model ID (replace with your server's model)"}],
+    }
     return {"modes":[{"id":"auto","label":"Auto"},{"id":"quality","label":"Quality"},{"id":"fast","label":"Fast"},{"id":"local","label":"Local model"},{"id":"custom","label":"Custom API"}],
     "providers":[{"id":"openai","configured":bool(os.getenv("OPENAI_API_KEY"))},{"id":"anthropic","configured":bool(os.getenv("ANTHROPIC_API_KEY"))},{"id":"gemini","configured":bool(os.getenv("GEMINI_API_KEY"))},{"id":"openai-compatible","configured":bool(os.getenv("OPENAI_BASE_URL"))},{"id":"local","configured":bool(os.getenv("LOCAL_BASE_URL"))}],
-    "note":"Request keys are used transiently and are never saved in project data."}
+    "models":models,
+    "note":"Model IDs are suggestions; availability depends on provider account, region, and API access. Request keys are used transiently and are never saved in project data."}
 
 @app.post("/api/v1/projects")
 def create_project(req: GenerateRequest):
