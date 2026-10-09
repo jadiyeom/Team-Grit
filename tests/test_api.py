@@ -33,3 +33,14 @@ def test_generation_validates_prompt():
 def test_unknown_project_returns_404():
     response = client.get("/api/v1/projects/aaaaaaaaaaaa")
     assert response.status_code == 404
+
+
+def test_provider_model_catalog_includes_current_suggestions():
+    response = client.get("/api/v1/providers")
+    assert response.status_code == 200
+    models = response.json()["models"]
+    assert "gpt-6-luna" in {item["id"] for item in models["openai"]}
+    assert "anthropic/claude-sonnet-5" in {item["id"] for item in models["anthropic"]}
+    assert "gemini/gemini-3.8-flash" in {item["id"] for item in models["gemini"]}
+    assert "openai-compatible" in models
+    assert "local" in models
