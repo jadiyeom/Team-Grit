@@ -1,7 +1,7 @@
 name: Tests
 on:
   push:
-    branches: [main, feat/ai-manim-studio]
+    branches: [main, feat/ai-manim-studio, feat/manim-render-smoke-test]
   pull_request:
     branches: [main]
 jobs:
@@ -15,3 +15,19 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - run: pytest -q
+
+  render-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render known scene in restricted Docker container
+        run: |
+          mkdir -p "$RUNNER_TEMP/team-grit-render"
+          cp tests/render_smoke.py "$RUNNER_TEMP/team-grit-render/scene.py"
+          docker run --rm --network none --memory 2g --cpus 2 --pids-limit 128 \
+            --read-only --tmpfs /tmp:rw,nosuid,size=512m -e HOME=/tmp \
+            -v "$RUNNER_TEMP/team-grit-render:/work:rw" -w /work \
+            manimcommunity/manim:stable \
+            manim -ql -r 854,480 --disable_caching scene.py SmokeScene
+          test -s "$RUNNER_TEMP/team-grit-render/media/videos/scene/480p15/SmokeScene.mp4"
