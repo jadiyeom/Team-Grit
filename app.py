@@ -155,6 +155,8 @@ def render_project(project_id:str,req:RenderRequest):
     p=load_project(project_id)
     if not shutil.which("docker"): raise HTTPException(503,"Docker is required for isolated rendering. Install Docker Desktop and start it.")
     rid=new_id(); work=(RENDERS/rid).resolve(); work.mkdir(parents=True,exist_ok=False)
+    # Manim runs as a non-root user in the container; make this disposable bind-mounted scratch directory writable.
+    work.chmod(0o777)
     (work/"scene.py").write_text(p["code"],encoding="utf-8")
     quality="l" if req.quality=="preview" else "m"
     ratio=p.get("settings",{}).get("aspect_ratio","16:9")
