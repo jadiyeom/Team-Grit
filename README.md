@@ -73,15 +73,23 @@ The first render may take longer while Docker downloads the Manim image.
 
 See `.env.example` for the full list of variables.
 
-| Provider | Required configuration | Example model |
-|---|---|---|
-| OpenAI | `OPENAI_API_KEY` | `gpt-4o-mini` |
-| Anthropic | `ANTHROPIC_API_KEY` | `anthropic/claude-3-5-sonnet-latest` |
-| Google Gemini | `GEMINI_API_KEY` | `gemini/gemini-2.5-flash` |
-| OpenAI-compatible | `OPENAI_BASE_URL`, optional compatible key | Provider-specific model ID |
-| Local | `LOCAL_BASE_URL` | Local model served through an OpenAI-compatible API |
+### Model catalog (checked October 9, 2026)
 
-LiteLLM model names and available models change over time; use the model identifier supported by your provider. Provider selection is not a guarantee that a model is available or that credentials have sufficient quota. The API reports a clear error if configuration is missing or a provider request fails.
+The UI's **Model ID** field offers these suggested IDs while still allowing any model ID supported by your provider. Availability depends on your account, region, API access, and the installed LiteLLM version. A catalog entry is a suggestion, not a live guarantee that your key can call it.
+
+| Provider | Suggested model IDs | Recommended use |
+|---|---|---|
+| OpenAI | `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna` | Astra for hardest story/code generation; Sol for balanced quality; Luna for lower-cost high-volume work |
+| Anthropic | `anthropic/claude-fable-5`, `anthropic/claude-opus-5`, `anthropic/claude-opus-4-8`, `anthropic/claude-sonnet-5`, `anthropic/claude-haiku-4-5` | Fable/Opus for complex animation planning and code; Sonnet for balance; Haiku for speed |
+| Google Gemini | `gemini/gemini-3.8-flash`, `gemini/gemini-3.1-pro-preview`, `gemini/gemini-3.7-flash` | Flash for fast generation; Pro preview for harder reasoning and coding |
+| OpenAI-compatible | Provider-specific model ID, e.g. `openai-compatible/model` | Any compatible chat-completions endpoint |
+| Local | Provider-specific model ID, e.g. `openai/local-model` | Ollama or another OpenAI-compatible local inference server |
+
+Official references: [OpenAI model catalog](https://developers.openai.com/api/docs/models), [Anthropic model overview](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-5), and [Gemini API models](https://ai.google.dev/gemini-api/docs/models).
+
+The default OpenAI model is `gpt-6-luna`; Fast uses `gpt-6-luna` and Quality uses `gpt-6.1-sol`. Override these with `OPENAI_MODEL`, `TEAMGRIT_FAST_MODEL`, and `TEAMGRIT_QUALITY_MODEL`. Model IDs and availability change; verify them in your provider's current API catalog before production use. LiteLLM may require a provider prefix such as `anthropic/` or `gemini/`.
+
+Provider selection is not a guarantee that a model is enabled for your account or that credentials have sufficient quota. The API reports a clear error if configuration is missing or a provider request fails.
 
 Request-level settings can override the model, base URL, and API key for one generation request. Those values are not written to the project file. Avoid using request-level keys on a publicly exposed instance without authentication and rate limiting.
 
