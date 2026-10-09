@@ -157,7 +157,9 @@ def render_project(project_id:str,req:RenderRequest):
     rid=new_id(); work=(RENDERS/rid).resolve(); work.mkdir(parents=True,exist_ok=False)
     (work/"scene.py").write_text(p["code"],encoding="utf-8")
     quality="l" if req.quality=="preview" else "m"
-    cmd=["docker","run","--rm","--network","none","--memory","2g","--cpus","2","--pids-limit","128","--read-only","--tmpfs","/tmp:rw,nosuid,size=512m","-e","HOME=/tmp","-v",str(work)+":/work:rw","-w","/work",os.getenv("MANIM_DOCKER_IMAGE","manimcommunity/manim:stable"),"manim","-q"+quality,"--disable_caching","scene.py","GeneratedScene"]
+    ratio=p.get("settings",{}).get("aspect_ratio","16:9")
+    resolution={"16:9":"854,480" if req.quality=="preview" else "1920,1080","9:16":"480,854" if req.quality=="preview" else "1080,1920","1:1":"600,600" if req.quality=="preview" else "1080,1080"}[ratio]
+    cmd=["docker","run","--rm","--network","none","--memory","2g","--cpus","2","--pids-limit","128","--read-only","--tmpfs","/tmp:rw,nosuid,size=512m","-e","HOME=/tmp","-v",str(work)+":/work:rw","-w","/work",os.getenv("MANIM_DOCKER_IMAGE","manimcommunity/manim:stable"),"manim","-q"+quality,"-r",resolution,"--disable_caching","scene.py","GeneratedScene"]
     started=time.monotonic()
     try: result=subprocess.run(cmd,capture_output=True,text=True,timeout=300,check=False)
     except subprocess.TimeoutExpired: raise HTTPException(504,"Render exceeded the 5-minute limit. Try a shorter animation.")
